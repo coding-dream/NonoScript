@@ -2,54 +2,66 @@ package com.nono.apkkiller;
 
 import com.nono.apkkiller.util.ExternalCommand;
 import com.nono.apkkiller.util.ThreadUtil;
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public final class LuytenApp {
 
-	// 可控参数，注意这里的文件目录不要带上 ==== 等特殊字符，否则7z识别不了。
-	static String originApk = "D:\\tempDelete\\huhu.apk";
 	static String rootProject = "D:\\tempDelete\\";
 
-	static File originFile = new File(originApk);
-
-	static String fileName = originFile.getName().substring(0, originFile.getName().length() - 4);
-	static String outputPath = rootProject + "output\\" + fileName + "\\";
-
-	static String dexRootFolder = outputPath + "dex\\";
-
+	// 需要反编译的apk的目录(批量反编译打开dex)
+    static String originApkDirStr = "D:\\1XP模块apks\\";
+    static File originApkDir = new File(originApkDirStr);
 
 	public static void main(final String[] args) throws Exception {
 		File file = new File(rootProject);
 		if (!file.exists()) {
 			file.mkdirs();
 		}
-		decodeDexAndUnzip();
-		d2j_dex2jar();
-		openLuyten();
+		int startIndex = 5;
+		int endIndex = 10;
+        File[] fileList = originApkDir.listFiles();
+        for (int i = startIndex; i < fileList.length; i++) {
+            File apkFile = fileList[startIndex];
+            if (!apkFile.getName().endsWith(".apk")) {
+                continue;
+            }
+            if (i >= endIndex) {
+                return;
+            }
+            startDecode(apkFile);
+        }
 	}
 
-	private static void openLuyten() {
-		List<File> jars = loadJarPaths();
-		for (File jar : jars) {
-			ThreadUtil.run(() -> executeAndPrintLines("cmd /c java -jar D:\\反编译工具\\Luyten\\Luyten.app\\Contents\\Resources\\Java\\luyten-0.4.9.jar " + jar.getAbsolutePath()));
-		}
-	}
+    private static void startDecode(File apkFile) {
+        System.out.println("===========> decode " + apkFile.getAbsolutePath());
+        String fileName = apkFile.getName().substring(0, apkFile.getName().length() - 4);
+        String outputPath = rootProject + "output\\" + fileName + "\\";
+        String dexRootFolder = outputPath + "dex\\";
 
-	private static void d2j_dex2jar() {
-		List<File> dexPaths = loadDexPaths();
+        decodeDexAndUnzip(apkFile, dexRootFolder);
+        d2j_dex2jar(dexRootFolder);
+        openLuyten(dexRootFolder);
+    }
+
+    private static void openLuyten(String dexRootFolder) {
+        List<File> jars = loadJarPaths(dexRootFolder);
+        for (File jar : jars) {
+            ThreadUtil.run(() -> executeAndPrintLines("cmd /c java -jar D:\\反编译工具\\Luyten\\Luyten.app\\Contents\\Resources\\Java\\luyten-0.4.9.jar " + jar.getAbsolutePath()));
+        }
+    }
+
+	private static void d2j_dex2jar(String dexRootFolder) {
+		List<File> dexPaths = loadDexPaths(dexRootFolder);
 		for (File dex : dexPaths) {
 			System.out.println(dex.getParent());
 			executeAndPrintLines("cmd /c d2j-dex2jar " + dex.getAbsolutePath() + " -o " + dex.getAbsolutePath() + ".jar");
 		}
 	}
 
-	private static List<File> loadPaths(String sufix) {
+	private static List<File> loadPaths(String sufix, String dexRootFolder) {
 		List<File> dexs = new ArrayList<>();
 
 		File fileRootDexPath = new File(dexRootFolder);
@@ -64,15 +76,15 @@ public final class LuytenApp {
 		return dexs;
 	}
 
-	private static List<File> loadDexPaths() {
-		return loadPaths(".dex");
+	private static List<File> loadDexPaths(String dexRootFolder) {
+		return loadPaths(".dex", dexRootFolder);
 	}
 
-	private static List<File> loadJarPaths() {
-		return loadPaths(".jar");
+	private static List<File> loadJarPaths(String dexRootFolder) {
+		return loadPaths(".jar", dexRootFolder);
 	}
 
-	private static void decodeDexAndUnzip() {
+	private static void decodeDexAndUnzip(File originFile, String dexRootFolder) {
 		// 注意 -o和输出目录中不能有空格
 		String unzip = "cmd /c 7z x " + originFile.getAbsolutePath() + " -o" + dexRootFolder;
 		executeAndPrintLines(unzip);
