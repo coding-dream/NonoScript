@@ -14,10 +14,10 @@ import org.apache.commons.io.FileUtils;
  *
  * 如果遇到 Caused by: java.io.IOException: can't find classes.dex in the zip 不需理会，是因为文件已经decode过一次的原因。
  */
-public final class Main {
+public final class ApkKillerApp {
 
 	// 可控参数
-	static String originApk = "D:\\AndroidKillerProject\\5555.apk";
+	static String originApk = "D:\\AndroidKillerProject\\huhu20190125.apk";
 	static String rootProject = "D:\\AndroidKillerProject\\";
 	static String killerRootProject = "D:\\Program Files\\AndroidKiller_v1.3.1\\projects\\";
 
